@@ -150,6 +150,7 @@ class Insight:
     def __init__(self, insight_id, tech_name, affected_versions, severity, description, recommendation, cve_id=None):
         check_not_empty(insight_id, "insight_id")
         check_not_empty(tech_name, "tech_name")
+        check_not_empty(recommendation, "recommendation")
         if not isinstance(severity, int) or severity < 1 or severity > 4:
             raise ValueError(f"severity must be a number between 1 and 4, got {severity!r}")
         if not isinstance(affected_versions, list) or len(affected_versions) == 0:
@@ -161,7 +162,25 @@ class Insight:
         self.severity = severity
         self.description = description
         self.recommendation = recommendation
-        self.cve_id = cve_id
+        self.cve_id = Insight.normalize_cve(cve_id)
+
+    @property
+    def is_critical(self):
+        return self.severity == 1
+
+    def applies_to(self, detection):
+        # only exact versions match; an unknown version (None) never creates a finding
+        if detection.tech_name != self.tech_name:
+            return False
+        if detection.version is None:
+            return False
+        return detection.version in self.affected_versions
+
+    @staticmethod
+    def normalize_cve(cve_id):
+        if cve_id is None:
+            return None
+        return cve_id.strip().upper()
 
     @classmethod
     def from_dict(cls, data):
@@ -181,6 +200,22 @@ class Insight:
 
     def __repr__(self):
         return f"Insight('{self.insight_id}', '{self.tech_name}', {self.severity})"
+
+
+class RiskFinding:
+    # a possible risk: a detection that matched a local synthetic rule, not a verified vulnerability
+    def __init__(self, detection, insight):
+        self.detection = detection
+        self.insight = insight
+        self.target_id = detection.target_id
+        self.severity = insight.severity
+
+    def __str__(self):
+        return (f"[severity {self.severity}] {self.detection.tech_name} {self.detection.version} "
+                f"in {self.target_id}/{self.detection.endpoint_id} - rule {self.insight.insight_id}")
+
+    def __repr__(self):
+        return f"RiskFinding('{self.detection.detection_id}', '{self.insight.insight_id}')"
 
 
 class Signature(ABC):

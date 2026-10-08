@@ -1,7 +1,7 @@
 from webtech_inspector.models import ScanTarget, ContentEndpoint, MetaDataEndpoint
 from webtech_inspector.models import RegexSignature, PackageSignature
 from webtech_inspector.repository import load_targets, load_signatures, load_insights
-from webtech_inspector.detection import detect_technologies
+from webtech_inspector.detection import detect_technologies, match_insights, find_manual_checks
 
 
 def demo_models():
@@ -105,12 +105,35 @@ def demo_detection(target_lookup, signatures):
     return all_detections
 
 
+def demo_risks(detections, insights):
+    print("\n=== Possible risks (local synthetic rules, not verified vulnerabilities) ===")
+    findings = match_insights(detections, insights)
+    for finding in findings:
+        critical_text = " CRITICAL" if finding.insight.is_critical else ""
+        print(f"{finding}{critical_text}")
+
+    print("\nNeeds manual check (version unknown):")
+    for detection in find_manual_checks(detections, insights):
+        print("  ", detection.tech_name, "in", detection.target_id, detection.endpoint_id)
+
+    matched_ids = set()
+    for finding in findings:
+        matched_ids.add(finding.detection.detection_id)
+
+    print("\nKnown version but no matching rule (no finding):")
+    for detection in detections:
+        if detection.version is not None and detection.detection_id not in matched_ids:
+            print("  ", detection.tech_name, detection.version)
+    return findings
+
+
 def main():
     print("WebTech Inspector - Stage 1 (local synthetic data only)")
     demo_models()
     demo_signatures()
     target_lookup, signatures, insights = demo_loading()
-    demo_detection(target_lookup, signatures)
+    detections = demo_detection(target_lookup, signatures)
+    demo_risks(detections, insights)
 
 
 if __name__ == "__main__":
