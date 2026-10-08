@@ -3,6 +3,7 @@ from webtech_inspector.models import RegexSignature, PackageSignature
 from webtech_inspector.repository import load_targets, load_signatures, load_insights
 from webtech_inspector.detection import detect_technologies, match_insights, find_manual_checks
 from webtech_inspector import processing
+from webtech_inspector.iterators import EndpointCollection
 
 
 def demo_models():
@@ -198,6 +199,28 @@ def demo_queues_and_sorting(target_lookup, findings):
         print("  ", finding)
 
 
+def demo_iterators(target_lookup):
+    print("\n=== Iterable and Iterator ===")
+    collection = EndpointCollection(target_lookup["T002"].endpoints)
+
+    first_iterator = iter(collection)
+    second_iterator = iter(collection)
+    print("first :", next(first_iterator).endpoint_id)
+    print("first :", next(first_iterator).endpoint_id)
+    print("second:", next(second_iterator).endpoint_id, "(started from the beginning)")
+    print("first :", next(first_iterator).endpoint_id)
+
+    print("A for loop on the same collection:")
+    for endpoint in collection:
+        print("  ", endpoint)
+
+    empty_iterator = iter(EndpointCollection([]))
+    try:
+        next(empty_iterator)
+    except StopIteration:
+        print("Empty collection -> StopIteration")
+
+
 def main():
     print("WebTech Inspector - Stage 1 (local synthetic data only)")
     demo_models()
@@ -207,6 +230,7 @@ def main():
     findings = demo_risks(detections, insights)
     demo_collections(target_lookup, detections, findings)
     demo_queues_and_sorting(target_lookup, findings)
+    demo_iterators(target_lookup)
 
 
 if __name__ == "__main__":
