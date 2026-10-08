@@ -97,3 +97,39 @@ def sort_targets_by_size(targets):
 def sort_by_severity_and_name(findings):
     # lower() so "jQuery" and "PHP" are sorted like a person would expect
     return sorted(findings, key=lambda finding: (finding.severity, finding.detection.tech_name.lower()))
+
+
+SEVERITY_NAMES = {1: "critical", 2: "high", 3: "medium", 4: "low"}
+
+
+def count_by_severity(findings):
+    counts = {}
+    for severity in SEVERITY_NAMES:
+        counts[severity] = 0
+    for finding in findings:
+        counts[finding.severity] += 1
+    return counts
+
+
+def tech_stack_by_target(detections):
+    # target_id -> list of "name version" texts, without repeats
+    stack = {}
+    for detection in detections:
+        version_text = detection.version if detection.version is not None else "?"
+        text = f"{detection.tech_name} {version_text}"
+        if detection.target_id not in stack:
+            stack[detection.target_id] = []
+        if text not in stack[detection.target_id]:
+            stack[detection.target_id].append(text)
+    return stack
+
+
+def top_findings(findings, how_many):
+    heap = build_priority_queue(findings)
+    result = []
+    while len(result) < how_many:
+        finding = next_finding(heap)
+        if finding is None:
+            break
+        result.append(finding)
+    return result

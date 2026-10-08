@@ -47,9 +47,9 @@ def demo_signatures():
     signatures = [
         RegexSignature("S001", "jQuery", "JavaScript Library",
                        r"jquery[-.]?[0-9]", r"jquery[-.]([0-9]+\.[0-9]+\.[0-9]+)"),
-        RegexSignature("S002", "Express", "Web Server", r"x-powered-by:\s*express"),
+        RegexSignature("S002", "Express", "Web Framework", r"x-powered-by:\s*express"),
         PackageSignature("S003", "React", "JavaScript Framework", "react"),
-        PackageSignature("S004", "Express", "Web Server", "express"),
+        PackageSignature("S004", "Express", "Web Framework", "express"),
     ]
 
     endpoints = [
@@ -94,7 +94,8 @@ def demo_detection(target_lookup, signatures):
     print("\n=== Detection ===")
     all_detections = []
     for target in target_lookup.values():
-        detections, warnings = detect_technologies(target, signatures)
+        with AnalysisSession(target):
+            detections, warnings = detect_technologies(target, signatures)
         print(f"{target.target_id}: {len(detections)} detections")
         for detection in detections:
             print("  ", detection)
@@ -270,6 +271,47 @@ def demo_context_manager(target_lookup, signatures):
     print("Status after the error:", target.status)
 
 
+def print_report(target_lookup, signatures, detections, findings, insights):
+    print("\n" + "=" * 60)
+    print("REPORT")
+    print("=" * 60)
+
+    endpoint_count = 0
+    for target in target_lookup.values():
+        endpoint_count += len(target)
+    known = processing.known_version_detections(detections)
+
+    print(f"Targets: {len(target_lookup)} | Endpoints: {endpoint_count} | "
+          f"Signatures: {len(signatures)} | Detections: {len(detections)}")
+    print(f"Known version: {len(known)} | Unknown version: {len(detections) - len(known)}")
+
+    print("\nTech stack:")
+    stack = processing.tech_stack_by_target(detections)
+    for target_id, tech_list in stack.items():
+        print(f"   {target_id} ({target_lookup[target_id].uri}): {', '.join(tech_list)}")
+
+    print("\nDetections by category:")
+    for category, category_detections in processing.group_by_category(detections).items():
+        print(f"   {category}: {len(category_detections)}")
+
+    print("\nPossible risks by severity:")
+    for severity, count in processing.count_by_severity(findings).items():
+        print(f"   {severity} ({processing.SEVERITY_NAMES[severity]}): {count}")
+
+    print("\nTop 3 to handle first:")
+    for number, finding in enumerate(processing.top_findings(findings, 3), start=1):
+        detection = finding.detection
+        print(f"   {number}. {detection.tech_name} {detection.version} - "
+              f"{detection.target_id}/{detection.endpoint_id} - rule {finding.insight.insight_id}")
+        print(f"      Recommendation: {finding.insight.recommendation}")
+
+    manual_checks = find_manual_checks(detections, insights)
+    print(f"\nNeeds manual check (version unknown): {len(manual_checks)}")
+
+    print("\nNote: this report uses synthetic data and local matching rules only.")
+    print("It is not a penetration test and no vulnerability was verified on a network.")
+
+
 def main():
     print("WebTech Inspector - Stage 1 (local synthetic data only)")
     demo_models()
@@ -282,6 +324,7 @@ def main():
     demo_iterators(target_lookup)
     demo_generators(detections, findings)
     demo_context_manager(target_lookup, signatures)
+    print_report(target_lookup, signatures, detections, findings, insights)
 
 
 if __name__ == "__main__":

@@ -144,5 +144,24 @@ class TestSorting(unittest.TestCase):
         self.assertEqual(processing.sort_by_severity([]), [])
 
 
+class TestReportHelpers(unittest.TestCase):
+    def test_count_by_severity(self):
+        counts = processing.count_by_severity([make_finding("A", 1), make_finding("B", 1), make_finding("C", 3)])
+        self.assertEqual(counts, {1: 2, 2: 0, 3: 1, 4: 0})
+        self.assertEqual(processing.count_by_severity([]), {1: 0, 2: 0, 3: 0, 4: 0})
+
+    def test_tech_stack(self):
+        stack = processing.tech_stack_by_target(DETECTIONS)
+        self.assertEqual(stack["T1"], ["jQuery 3.4.1", "React ?"])
+        self.assertEqual(stack["T2"], ["jQuery 3.6.0", "Vue 3.2.0"])
+
+    def test_top_findings(self):
+        findings = [make_finding("A", 3), make_finding("B", 1), make_finding("C", 2), make_finding("D", 4)]
+        top = processing.top_findings(findings, 3)
+        self.assertEqual([finding.detection.tech_name for finding in top], ["B", "C", "A"])
+        self.assertEqual(len(processing.top_findings(findings[:1], 3)), 1)
+        self.assertEqual(processing.top_findings([], 3), [])
+
+
 if __name__ == "__main__":
     unittest.main()
