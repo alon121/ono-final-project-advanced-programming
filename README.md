@@ -87,8 +87,31 @@
 קיימת הרכבה בקישור בין Target ל Endpoints שלו, הדבר ממומש ע"י רשימת אובייקטי endpoints כמאפיין של target (self.endpoints). באופן הזה ניתן לבצע מניפולציות שונות כמו הוספה, הורדה וחיפוש.
 
 ## טבלת מבני הנתונים
-## מקור הנתונים ב־AI, מבנה data/sample_data.jsonl, תהליך הטעינה ל־dict, ההמרה לאובייקטים ובדיקת הנתונים.
-## טבלת פעולות שמשנות אוסף לעומת פעולות שיוצרות אוסף חדש.
+| מבנה | שימוש | למה |
+|---|---|---|
+| `list` | `target.endpoints`, רשימות זיהויים | שומר סדר קליטה |
+| `tuple` | `(tech_name, version, severity)` | רשומה קבועה וקצרה |
+| starred unpacking | `first, *remaining = items` | ממצא ראשון והשאר |
+| `set` | טכנולוגיות של יעד, מזהים שכבר נראו | בלי כפילויות להשוואה בין יעדים |
+| `dict` | `target_lookup` לפי ID, `count_by_tech` | חיפוש מהיר וספירה |
+| `deque` | תור Endpoints | FIFO לפי סדר הגעה |
+| `heapq` | תור ממצאים `(severity, counter, finding)` | הכי דחוף יוצא ראשון, ה-counter שובר שוויון |
+| comprehensions | list / set / dict ב-`processing.py` | סינון ומיפוי קצרים |
+| `sorted` | פונקציה (`severity_key`), lambda, ו-tuple של שני שדות | סדר טיפול ברור |
+
+## נתונים וטעינה
+- `data/sample_data.jsonl` - 18 שורות, כל שורה היא Endpoint אחד עם פרטי ה-Target שלו.
+- `data/patterns.json` - 10 חתימות. `data/insights.json` - 8 כללים.
+- הטעינה מתבצעת בקובץ repository.py
+- כל שגיאה בנתונים זורקת `ValueError` עם שם הקובץ, מספר השורה והסיבה. בדיקות מבוצעות גם בבנאי של כל מחלקה.
+- מבנה הנתונים מפורט בAI_USAGE.md.
+  
+## טבלת פעולות שמשנות אוסף לעומת פעולות שיוצרות אוסף חדש
+| משנה את האוסף | יוצר אוסף חדש |
+|---|---|
+| `add_endpoint`, `remove_endpoint` | `sorted(...)` כפי שנעשה שימוש בmain.py |
+| `set.add` כפי שקורה בהוספה של זיהוי לendpoint  | comprehensions כמו ב known_version_detections |
+| `deque.popleft` כפי שאנחנו עושים שימוש במעבר על endpointים, `heapq.heappop` כפי שקורה במעבר על זיהויים (findings) | פעולת החיתוך כפי שקורה בcompare_targets |
 ## הסבר על ה־Iterable וה־Iterator שמומשו.
 ## הסבר על ה־Generator וה־Pipeline העצל.
 ## הסבר על ה־Context Manager ומה קורה בו במקרה של חריגה.
