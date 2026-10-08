@@ -1,5 +1,5 @@
+import types
 import unittest
-
 from itertools import islice
 
 from webtech_inspector.models import ContentEndpoint, Detection, Insight, RiskFinding
@@ -123,8 +123,20 @@ class TestLazyPipeline(unittest.TestCase):
 
     def test_pipeline_is_a_generator_not_a_list(self):
         pipeline = tech_version_pipeline([], "Library")
-        self.assertNotIsInstance(pipeline, list)
+        self.assertIsInstance(pipeline, types.GeneratorType)
         self.assertEqual(list(pipeline), [])
+
+    def test_pipeline_used_up(self):
+        pipeline = tech_version_pipeline([make_detection(1, "Library", "1.0")], "Library")
+        self.assertEqual(len(list(pipeline)), 1)
+        self.assertEqual(list(pipeline), [])
+
+    def test_iterator_used_up_but_collection_is_not(self):
+        collection = EndpointCollection(make_endpoints(2))
+        iterator = iter(collection)
+        list(iterator)
+        self.assertEqual(list(iterator), [])
+        self.assertEqual(len(list(collection)), 2)
 
 
 if __name__ == "__main__":

@@ -41,6 +41,12 @@ class TestAnalysisSession(unittest.TestCase):
             self.assertEqual(self.target.status, "processing")
         self.assertEqual(self.target.status, "idle")
 
+    def test_exit_returns_false(self):
+        session = AnalysisSession(self.target)
+        session.__enter__()
+        self.assertFalse(session.__exit__(ValueError, ValueError("x"), None))
+        self.assertEqual(self.target.status, "idle")
+
     def test_bad_status(self):
         with self.assertRaises(ValueError):
             self.target.status = "running"
