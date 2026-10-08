@@ -1,0 +1,6 @@
+[project]
+name = "webtech-inspector"
+version = "0.1.0"
+description = "Local tech stack detection and risk report (course project, Stage 1)"
+requires-python = ">=3.10"
+dependencies = []
