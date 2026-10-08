@@ -290,9 +290,14 @@ class PackageSignature(Signature):
         except json.JSONDecodeError as error:
             raise ValueError(f"Endpoint {endpoint.endpoint_id} has broken JSON: {error}")
 
+        # valid JSON that is not a package file, e.g. [1, 2] or {"status": "ok"}
+        if not isinstance(data, dict):
+            return {}
+
         packages = {}
-        packages.update(data.get("dependencies", {}))
-        packages.update(data.get("devDependencies", {}))
+        for section in ["dependencies", "devDependencies"]:
+            if isinstance(data.get(section), dict):
+                packages.update(data[section])
         return packages
 
     def match(self, endpoint):
@@ -300,7 +305,7 @@ class PackageSignature(Signature):
 
     def extract_version(self, endpoint):
         version_text = self.read_packages(endpoint).get(self.package_name)
-        if version_text is None:
+        if not isinstance(version_text, str):
             return None
         # "^17.0.2" or "~4.18.2" is a range, not the installed version, so we treat it as unknown
         if re.fullmatch(r"[0-9]+(\.[0-9]+)*", version_text) is None:

@@ -61,6 +61,16 @@ class TestPackageSignature(unittest.TestCase):
         with self.assertRaises(ValueError):
             REACT.match(make_package('{"dependencies": '))
 
+    def test_json_that_is_not_a_package_file(self):
+        self.assertFalse(REACT.match(make_package("[1, 2]")))
+        self.assertFalse(REACT.match(make_package('{"status": "ok"}')))
+        self.assertFalse(REACT.match(make_package('{"dependencies": ["react"]}')))
+
+    def test_version_that_is_not_text(self):
+        package = make_package('{"dependencies": {"react": 17}}')
+        self.assertTrue(REACT.match(package))
+        self.assertIsNone(REACT.extract_version(package))
+
 
 class TestSignatureBase(unittest.TestCase):
     def test_cannot_create_base(self):
