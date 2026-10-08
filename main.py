@@ -1,4 +1,5 @@
 from webtech_inspector.models import ScanTarget, ContentEndpoint, MetaDataEndpoint
+from webtech_inspector.models import RegexSignature, PackageSignature
 
 
 def demo_models():
@@ -33,9 +34,40 @@ def demo_models():
     print("Endpoints left:", len(target))
 
 
+def demo_signatures():
+    print("\n=== Signatures demo (polymorphism) ===")
+    signatures = [
+        RegexSignature("S001", "jQuery", "JavaScript Library",
+                       r"jquery[-.]?[0-9]", r"jquery[-.]([0-9]+\.[0-9]+\.[0-9]+)"),
+        RegexSignature("S002", "Express", "Web Server", r"x-powered-by:\s*express"),
+        PackageSignature("S003", "React", "JavaScript Framework", "react"),
+        PackageSignature("S004", "Express", "Web Server", "express"),
+    ]
+
+    endpoints = [
+        ContentEndpoint("E001", "<script src='jquery-3.4.1.min.js'></script>", "homepage", "/", 200, "HTML"),
+        ContentEndpoint("E002", '{"dependencies": {"react": "17.0.2", "express": "^4.18.2"}}',
+                        "package.json", "/package.json", 200, "JSON"),
+        MetaDataEndpoint("E003", "X-Powered-By: Express", "headers", "headers"),
+    ]
+
+    # one loop for all signature types - no check of which class it is
+    for endpoint in endpoints:
+        for signature in signatures:
+            if signature.match(endpoint):
+                version = signature.extract_version(endpoint)
+                print(f"{endpoint.endpoint_id}: {signature.tech_name} version={version} (by {signature.signature_id})")
+
+    try:
+        RegexSignature("S999", "Broken", "Test", "jquery[")
+    except ValueError as error:
+        print("Error:", error)
+
+
 def main():
     print("WebTech Inspector - Stage 1 (local synthetic data only)")
     demo_models()
+    demo_signatures()
 
 
 if __name__ == "__main__":

@@ -1,3 +1,7 @@
+import json
+import re
+from abc import ABC, abstractmethod
+
 VALID_CONTENT_TYPES = ["HTML", "JSON", "JS", "CSS"]
 
 
@@ -174,3 +178,110 @@ class Insight:
 
     def __repr__(self):
         return f"Insight('{self.insight_id}', '{self.tech_name}', {self.severity})"
+
+
+class Signature(ABC):
+    def __init__(self, signature_id, tech_name, category):
+        check_not_empty(signature_id, "signature_id")
+        check_not_empty(tech_name, "tech_name")
+        self.signature_id = signature_id
+        self.tech_name = tech_name
+        self.category = category
+
+    @abstractmethod
+    def match(self, endpoint):
+        pass
+
+    @abstractmethod
+    def extract_version(self, endpoint):
+        pass
+
+    def __str__(self):
+        return f"{self.signature_id}: {self.tech_name} ({self.category})"
+
+
+class RegexSignature(Signature):
+    def __init__(self, signature_id, tech_name, category, match_pattern, version_pattern=None):
+        super().__init__(signature_id, tech_name, category)
+        check_regex(match_pattern, signature_id)
+        if version_pattern is not None:
+            check_regex(version_pattern, signature_id)
+        self.match_pattern = match_pattern
+        self.version_pattern = version_pattern
+
+    def match(self, endpoint):
+        text = endpoint.get_searchable_content()
+        return re.search(self.match_pattern, text, re.IGNORECASE) is not None
+
+    def extract_version(self, endpoint):
+        if self.version_pattern is None:
+            return None
+        found = re.search(self.version_pattern, endpoint.get_searchable_content(), re.IGNORECASE)
+        if found is None:
+            return None
+        return found.group(1)
+
+    def __repr__(self):
+        return f"RegexSignature('{self.signature_id}', '{self.tech_name}')"
+
+
+class PackageSignature(Signature):
+    def __init__(self, signature_id, tech_name, category, package_name):
+        super().__init__(signature_id, tech_name, category)
+        check_not_empty(package_name, "package_name")
+        self.package_name = package_name
+
+    def read_packages(self, endpoint):
+        # only JSON files are package files, HTML pages are skipped
+        if getattr(endpoint, "content_type", None) != "JSON":
+            return {}
+        try:
+            data = json.loads(endpoint.raw_content)
+        except json.JSONDecodeError as error:
+            raise ValueError(f"Endpoint {endpoint.endpoint_id} has broken JSON: {error}")
+
+        packages = {}
+        packages.update(data.get("dependencies", {}))
+        packages.update(data.get("devDependencies", {}))
+        return packages
+
+    def match(self, endpoint):
+        return self.package_name in self.read_packages(endpoint)
+
+    def extract_version(self, endpoint):
+        version_text = self.read_packages(endpoint).get(self.package_name)
+        if version_text is None:
+            return None
+        # "^17.0.2" or "~4.18.2" is a range, not the installed version, so we treat it as unknown
+        if re.fullmatch(r"[0-9]+(\.[0-9]+)*", version_text) is None:
+            return None
+        return version_text
+
+    def __repr__(self):
+        return f"PackageSignature('{self.signature_id}', '{self.package_name}')"
+
+
+def check_regex(pattern, signature_id):
+    try:
+        re.compile(pattern)
+    except re.error as error:
+        raise ValueError(f"Signature {signature_id} has a bad regex '{pattern}': {error}")
+
+
+def signature_from_dict(data):
+    if data["kind"] == "regex":
+        return RegexSignature(
+            data["signature_id"],
+            data["tech_name"],
+            data["category"],
+            data["match_pattern"],
+            data.get("version_pattern"),
+        )
+    if data["kind"] == "package":
+        return PackageSignature(
+            data["signature_id"],
+            data["tech_name"],
+            data["category"],
+            data["package_name"],
+        )
+    raise ValueError(f"Unknown signature kind: {data['kind']}")
