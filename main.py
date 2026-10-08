@@ -2,6 +2,7 @@ from webtech_inspector.models import ScanTarget, ContentEndpoint, MetaDataEndpoi
 from webtech_inspector.models import RegexSignature, PackageSignature
 from webtech_inspector.repository import load_targets, load_signatures, load_insights
 from webtech_inspector.detection import detect_technologies, match_insights, find_manual_checks
+from webtech_inspector import processing
 
 
 def demo_models():
@@ -127,13 +128,53 @@ def demo_risks(detections, insights):
     return findings
 
 
+def demo_collections(target_lookup, detections, findings):
+    print("\n=== Collections ===")
+
+    tech_counts = processing.count_by_tech(detections)
+    print("Detections per technology:")
+    for tech_name, count in tech_counts.items():
+        print(f"   {tech_name}: {count}")
+    print("Angular count (missing key):", tech_counts.get("Angular", 0))
+
+    rows = processing.finding_rows(findings)
+    print("First finding row (tuple):", rows[0])
+    first, remaining = processing.split_first(rows)
+    print(f"First: {first}, remaining rows: {len(remaining)}")
+    print("split_first on empty list:", processing.split_first([]))
+
+    known = processing.known_version_detections(detections)
+    print(f"Known versions: {len(known)} of {len(detections)}")
+
+    demo_tech = processing.tech_names_of_target(detections, "T001")
+    portal_tech = processing.tech_names_of_target(detections, "T002")
+    common, only_demo = processing.compare_targets(demo_tech, portal_tech)
+    print("T001 tech:", sorted(demo_tech))
+    print("T002 tech:", sorted(portal_tech))
+    print("Common:", sorted(common), "| only in T001:", sorted(only_demo))
+
+    demo_tech.add("React")
+    print("After add('React') again, size is still:", len(demo_tech))
+    demo_tech.discard("Angular")
+    print("discard('Angular') on a missing item works without error")
+    print("'jQuery' in T001?", "jQuery" in demo_tech)
+
+    index = processing.endpoint_index(target_lookup["T001"])
+    print("T001 endpoint index keys:", list(index.keys()))
+
+    print("Detections by category:")
+    for category, category_detections in processing.group_by_category(detections).items():
+        print(f"   {category}: {len(category_detections)}")
+
+
 def main():
     print("WebTech Inspector - Stage 1 (local synthetic data only)")
     demo_models()
     demo_signatures()
     target_lookup, signatures, insights = demo_loading()
     detections = demo_detection(target_lookup, signatures)
-    demo_risks(detections, insights)
+    findings = demo_risks(detections, insights)
+    demo_collections(target_lookup, detections, findings)
 
 
 if __name__ == "__main__":
