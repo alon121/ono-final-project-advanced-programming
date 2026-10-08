@@ -28,7 +28,7 @@ class ContentEndpoint(Endpoint):
         super().__init__(endpoint_id, raw_content, source_name)
 
         if not isinstance(status_code, int) or status_code < 100 or status_code > 599:
-            raise ValueError(f"status_code must be between 100 and 599, got {status_code}")
+            raise ValueError(f"status_code must be a number between 100 and 599, got {status_code!r}")
         if content_type not in VALID_CONTENT_TYPES:
             raise ValueError(f"content_type must be one of {VALID_CONTENT_TYPES}, got {content_type}")
 
@@ -147,7 +147,7 @@ class Insight:
         check_not_empty(insight_id, "insight_id")
         check_not_empty(tech_name, "tech_name")
         if not isinstance(severity, int) or severity < 1 or severity > 4:
-            raise ValueError(f"severity must be between 1 and 4, got {severity}")
+            raise ValueError(f"severity must be a number between 1 and 4, got {severity!r}")
 
         self.insight_id = insight_id
         self.tech_name = tech_name
