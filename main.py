@@ -1,6 +1,7 @@
 from webtech_inspector.models import ScanTarget, ContentEndpoint, MetaDataEndpoint
 from webtech_inspector.models import RegexSignature, PackageSignature
 from webtech_inspector.repository import load_targets, load_signatures, load_insights
+from webtech_inspector.detection import detect_technologies
 
 
 def demo_models():
@@ -80,13 +81,36 @@ def demo_loading():
           f"{len(signatures)} signatures, {len(insights)} insights")
     print("Lookup T003:", target_lookup.get("T003"))
     print("Lookup T999:", target_lookup.get("T999"))
+    return target_lookup, signatures, insights
+
+
+def demo_detection(target_lookup, signatures):
+    print("\n=== Detection ===")
+    all_detections = []
+    for target in target_lookup.values():
+        detections, warnings = detect_technologies(target, signatures)
+        print(f"{target.target_id}: {len(detections)} detections")
+        for detection in detections:
+            print("  ", detection)
+        for warning in warnings:
+            print("   Warning:", warning)
+        all_detections.extend(detections)
+
+    broken_target = ScanTarget("T900", "https://broken.example.test")
+    broken_target.add_endpoint(ContentEndpoint("E900", '{"dependencies": ', "package.json",
+                                               "/package.json", 200, "JSON"))
+    detections, warnings = detect_technologies(broken_target, signatures)
+    print("Broken package.json ->", len(detections), "detections,", len(warnings), "warnings")
+    print("   Warning:", warnings[0])
+    return all_detections
 
 
 def main():
     print("WebTech Inspector - Stage 1 (local synthetic data only)")
     demo_models()
     demo_signatures()
-    demo_loading()
+    target_lookup, signatures, insights = demo_loading()
+    demo_detection(target_lookup, signatures)
 
 
 if __name__ == "__main__":
