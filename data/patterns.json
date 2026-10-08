@@ -1,8 +1,8 @@
 [
   {"signature_id": "S001", "kind": "regex", "tech_name": "jQuery", "category": "JavaScript Library",
-   "match_pattern": "jquery", "version_pattern": "jquery[-. v]+([0-9]+\\.[0-9]+\\.[0-9]+)"},
+   "match_pattern": "jquery[-. v]*[0-9]|jquery(\\.min)?\\.js", "version_pattern": "jquery[-. v]+([0-9]+\\.[0-9]+\\.[0-9]+)"},
   {"signature_id": "S002", "kind": "regex", "tech_name": "Bootstrap", "category": "CSS Framework",
-   "match_pattern": "bootstrap", "version_pattern": "bootstrap[-. v]+([0-9]+\\.[0-9]+\\.[0-9]+)"},
+   "match_pattern": "bootstrap[-. v]*[0-9]|bootstrap(\\.min)?\\.(css|js)", "version_pattern": "bootstrap[-. v]+([0-9]+\\.[0-9]+\\.[0-9]+)"},
   {"signature_id": "S003", "kind": "regex", "tech_name": "Vue", "category": "JavaScript Framework",
    "match_pattern": "vue(\\.min)?\\.js|vue@", "version_pattern": "vue@([0-9]+\\.[0-9]+\\.[0-9]+)"},
   {"signature_id": "S004", "kind": "regex", "tech_name": "nginx", "category": "Web Server",

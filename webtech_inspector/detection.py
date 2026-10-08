@@ -14,7 +14,8 @@ def detect_technologies(target, signatures):
                     continue
                 version = signature.extract_version(endpoint)
             except ValueError as error:
-                warnings.append(f"{signature.signature_id} on {endpoint.endpoint_id}: {error}")
+                if str(error) not in warnings:
+                    warnings.append(str(error))
                 continue
 
             key = (endpoint.endpoint_id, signature.signature_id, version)
