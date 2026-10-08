@@ -1,3 +1,7 @@
+import heapq
+from collections import deque
+
+
 def count_by_tech(detections):
     tech_counts = {}
     for detection in detections:
@@ -45,3 +49,50 @@ def compare_targets(tech_names_a, tech_names_b):
     common = tech_names_a & tech_names_b
     only_in_a = tech_names_a - tech_names_b
     return common, only_in_a
+
+
+def build_endpoint_queue(target):
+    queue = deque()
+    for endpoint in target.endpoints:
+        queue.append(endpoint)
+    return queue
+
+
+def next_endpoint(queue):
+    if len(queue) == 0:
+        return None
+    return queue.popleft()
+
+
+def build_priority_queue(findings):
+    # severity 1 comes out first; the counter keeps the original order when severity is equal,
+    # so Python never needs to compare two RiskFinding objects
+    heap = []
+    counter = 0
+    for finding in findings:
+        heapq.heappush(heap, (finding.severity, counter, finding))
+        counter += 1
+    return heap
+
+
+def next_finding(heap):
+    if len(heap) == 0:
+        return None
+    severity, counter, finding = heapq.heappop(heap)
+    return finding
+
+
+def severity_key(finding):
+    return finding.severity
+
+
+def sort_by_severity(findings):
+    return sorted(findings, key=severity_key)
+
+
+def sort_targets_by_size(targets):
+    return sorted(targets, key=lambda target: len(target), reverse=True)
+
+
+def sort_by_severity_and_name(findings):
+    return sorted(findings, key=lambda finding: (finding.severity, finding.detection.tech_name))

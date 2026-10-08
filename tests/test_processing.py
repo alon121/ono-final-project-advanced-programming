@@ -58,5 +58,68 @@ class TestCollections(unittest.TestCase):
         self.assertEqual(processing.endpoint_index(ScanTarget("T2", "u")), {})
 
 
+def make_finding(tech_name, severity):
+    detection = make_detection("T1", tech_name, "1.0")
+    insight = Insight(f"I-{tech_name}", tech_name, ["1.0"], severity, "d", "r")
+    return RiskFinding(detection, insight)
+
+
+class TestQueues(unittest.TestCase):
+    def test_fifo_order(self):
+        target = ScanTarget("T1", "https://a.example.test")
+        for endpoint_id in ["E1", "E2", "E3"]:
+            target.add_endpoint(ContentEndpoint(endpoint_id, "", "page", "/", 200, "HTML"))
+
+        queue = processing.build_endpoint_queue(target)
+        order = []
+        endpoint = processing.next_endpoint(queue)
+        while endpoint is not None:
+            order.append(endpoint.endpoint_id)
+            endpoint = processing.next_endpoint(queue)
+
+        self.assertEqual(order, ["E1", "E2", "E3"])
+        self.assertIsNone(processing.next_endpoint(queue))
+
+    def test_heap_order_with_ties(self):
+        findings = [make_finding("A", 3), make_finding("B", 1), make_finding("C", 2),
+                    make_finding("D", 1), make_finding("E", 3)]
+        heap = processing.build_priority_queue(findings)
+
+        order = []
+        finding = processing.next_finding(heap)
+        while finding is not None:
+            order.append(finding.detection.tech_name)
+            finding = processing.next_finding(heap)
+
+        # same severity keeps the order they were added (B before D, A before E)
+        self.assertEqual(order, ["B", "D", "C", "A", "E"])
+
+    def test_empty_heap(self):
+        heap = processing.build_priority_queue([])
+        self.assertIsNone(processing.next_finding(heap))
+
+
+class TestSorting(unittest.TestCase):
+    def test_sort_by_severity(self):
+        findings = [make_finding("A", 3), make_finding("B", 1), make_finding("C", 2)]
+        severities = [finding.severity for finding in processing.sort_by_severity(findings)]
+        self.assertEqual(severities, [1, 2, 3])
+
+    def test_sort_by_two_fields(self):
+        findings = [make_finding("Vue", 2), make_finding("Angular", 2), make_finding("React", 1)]
+        names = [finding.detection.tech_name for finding in processing.sort_by_severity_and_name(findings)]
+        self.assertEqual(names, ["React", "Angular", "Vue"])
+
+    def test_sort_targets_by_size(self):
+        small = ScanTarget("T1", "u1")
+        big = ScanTarget("T2", "u2")
+        big.add_endpoint(ContentEndpoint("E1", "", "page", "/", 200, "HTML"))
+        result = processing.sort_targets_by_size([small, big])
+        self.assertEqual(result[0].target_id, "T2")
+
+    def test_sort_empty(self):
+        self.assertEqual(processing.sort_by_severity([]), [])
+
+
 if __name__ == "__main__":
     unittest.main()

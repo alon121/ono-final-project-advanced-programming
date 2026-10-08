@@ -167,6 +167,38 @@ def demo_collections(target_lookup, detections, findings):
         print(f"   {category}: {len(category_detections)}")
 
 
+def demo_queues_and_sorting(target_lookup, findings):
+    print("\n=== FIFO queue (deque) ===")
+    queue = processing.build_endpoint_queue(target_lookup["T001"])
+    print("Endpoints in queue:", len(queue))
+    endpoint = processing.next_endpoint(queue)
+    while endpoint is not None:
+        print("   Processing", endpoint)
+        endpoint = processing.next_endpoint(queue)
+    print("Queue is empty, next_endpoint returns:", processing.next_endpoint(queue))
+
+    print("\n=== Priority queue (heapq) ===")
+    heap = processing.build_priority_queue(findings)
+    finding = processing.next_finding(heap)
+    while finding is not None:
+        print("   Handle:", finding)
+        finding = processing.next_finding(heap)
+    print("Heap is empty, next_finding returns:", processing.next_finding(heap))
+
+    print("\n=== Sorting ===")
+    print("By severity (named function):")
+    for finding in processing.sort_by_severity(findings)[:3]:
+        print("  ", finding)
+
+    print("Targets by number of endpoints (lambda):")
+    for target in processing.sort_targets_by_size(target_lookup.values()):
+        print(f"   {target.target_id}: {len(target)}")
+
+    print("By severity, then tech name (two fields):")
+    for finding in processing.sort_by_severity_and_name(findings):
+        print("  ", finding)
+
+
 def main():
     print("WebTech Inspector - Stage 1 (local synthetic data only)")
     demo_models()
@@ -175,6 +207,7 @@ def main():
     detections = demo_detection(target_lookup, signatures)
     findings = demo_risks(detections, insights)
     demo_collections(target_lookup, detections, findings)
+    demo_queues_and_sorting(target_lookup, findings)
 
 
 if __name__ == "__main__":
