@@ -63,6 +63,11 @@ def count_by_tech(detections):
     return tech_counts
 
 
+def print_tech_summary(tech_counts):
+    for tech_name, count in tech_counts.items():
+        print(f"Technology: {tech_name} -> Count: {count}")
+
+
 def group_by_category(detections):
     categories = {}
     for detection in detections:
@@ -106,6 +111,16 @@ def compare_targets(tech_names_a, tech_names_b):
 
 
 def build_endpoint_queue(target):
+    """
+    We chose to use a FIFO queue here in order
+    to process more trivial files first.
+    When scraping a target, package.json
+    and main page meta tags should
+    be processed before digging deeper into
+    the websites contents.
+    That will speed up identification speed
+    when processing many websites.
+    """
     queue = deque()
     for endpoint in target.endpoints:
         queue.append(endpoint)
@@ -187,3 +202,12 @@ def top_findings(findings, how_many):
             break
         result.append(finding)
     return result
+
+
+def build_target_lookup(targets):
+    target_lookup = {}
+    for target in targets:
+        if target.target_id in target_lookup:
+            raise ValueError(f"Duplicate target ID found: {target.target_id}")
+        target_lookup[target.target_id] = target
+    return target_lookup
