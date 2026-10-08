@@ -80,6 +80,21 @@
 
 
 # חלק ב' - הסברים ודרישות
+## מפת הקבצים
+```text
+main.py                          הדגמה מלאה ודו"ח
+webtech_inspector/__init__.py    אתחול החבילה
+webtech_inspector/models.py      מחלקות ומודלים - אובייקטים מרכזיים כמו יעדים לסריקה, תוצאות סריקה (endpoints), חתימות, זיהויים ותובנות/חולשות. דרכי ההצגה והטיפול בהם.
+webtech_inspector/repository.py  טעינת האובייקטים מתוך קבצים לוקאליים.
+webtech_inspector/processing.py  זיהוי טכנולוגיות, התאמת כללים, מבני נתונים, תורים, מיון וסיכומים
+webtech_inspector/iterators.py   Iterator, Generator, Lazy Pipeline.
+webtech_inspector/context_managers.py  מימוש של AnalysisSession כ Context Manager.
+AI_USAGE.md                      פירוט השימוש בAI כולל ההנחיות המפורשות לגבי יצירת המידע.
+data/                            נתוני דוגמה, חתימות וכללים
+tests/                           בדיקות unittest
+.gitignore, pyproject.toml : קבצים להתעלמות והגדרות הפרויקט.
+```
+
 ## הרכבה, הורשה, פולימורפיזם ומחלקה אבסטרקטית
 השתמשנו במחלקה אבסטרקטית עבור signatures. למחלקה זאת נדרש לממש דפוסי התנהגות שונים כאשר מנסים לבדוק התאמה של חתימות מסוגים שונים ולכן יש מימוש ייחודי עבור הפונקציות match וextract_version עבור כל אחד מסוגי החתימות.
 עבור endpoints, קיימת מחלקה ראשית וממנה יורשים שני הסוגים - סוג ראשון מבוסס על תוכן של דף אינטרנט והשני של רשומה מקובץ package.json. כל אחד מסוגי האובייקטים מקבל טיפול אחר מבחינת הולידציה של הערכים והאופן שבו מנגנון הזיהוי מתמודד איתו ולכן הגיוני מאוד שיהיו אובייקטים מסוג שונה על אף שהם גם חולקים מהות דומה ושדות זהים. כך יכול הקוד לזהות כיצד לפעול למולם. השתמשנו בפולימורפיזם כדי לשנות את האופן שבו תוכן כזה מוצג (ע"י דריסת get_searchable_content) וגם כדי לשנות את האופן שבו  מייצרים 
@@ -112,9 +127,20 @@
 | `add_endpoint`, `remove_endpoint` | `sorted(...)` כפי שנעשה שימוש בmain.py |
 | `set.add` כפי שקורה בהוספה של זיהוי לendpoint  | comprehensions כמו ב known_version_detections |
 | `deque.popleft` כפי שאנחנו עושים שימוש במעבר על endpointים, `heapq.heappop` כפי שקורה במעבר על זיהויים (findings) | פעולת החיתוך כפי שקורה בcompare_targets |
-## הסבר על ה־Iterable וה־Iterator שמומשו.
-## הסבר על ה־Generator וה־Pipeline העצל.
-## הסבר על ה־Context Manager ומה קורה בו במקרה של חריגה.
+## הסבר על ה־Iterable וה־Iterator שמומשו
+- EndpointCollection הוא Iterable. כל קריאה ל-iter() מחזירה EndpointIterator חדש, ולכן שני iterators מתקדמים כל אחד בנפרד.
+- EndpointIterator שומר אינדקס וזורק StopIteration בסוף.
+- iter_urgent_findings היא פונקציית generator (עם yield). היא מחזירה ממצאים בחומרה 1–2 אחד אחרי השני, ולא בונה רשימה.
+- אחרי שה-generator נגמר הוא נשאר ריק: next זורק StopIteration ו-list מחזיר []. כדי לעבור שוב צריך ליצור generator חדש.
+- 
+## הסבר על ה־Generator וה־Pipeline העצל
+- tech_version_pipeline בנוי משלוש generator expressions: סינון לפי קטגוריה, סינון של גרסה ידועה, והמרה ל-(tech_name, version).
+- יצירת ה-pipeline לא מריצה כלום. העבודה מתחילה רק כשמבקשים פריט (next, for, islice). ב-main.py לוקחים רק 2 תוצאות, ורואים בפלט שנקראו רק חלק מהזיהויים.
+- ההבדל מ-list comprehension: list comprehension עובר על כל הפריטים מיד ושומר את כולם בזיכרון. generator מחשב פריט רק כשצריך אותו.
+
+## הסבר על ה־Context Manager ומה קורה בו במקרה של חריגה
+- אנחנו מייצרים מין סשן לכל תהליך עיבוד של יעד וכך יכולים לוודא שכלל המשאבים שהוקצו לטיפול בו ישוחררו בסיום הטיפול (יכולים להיות הרבה ENDPOINTים או חתימות שנעשה בהם  שימוש בזיכרון).
+- אם קרתה חריגה כמו ריצה שנכשלה מחוץ לcontext manager, שינוי ידני של סטאטוס או ריצה שכבר מתרחשת על אותו יעד, בגלל תפיסת השגיאה ומימוש הexit, השגיאה לא תושתק אלא תועבר אחורה והסטאטוס יוחזר לקדמותו בכל מצב. 
 
 
 ## גרסת פייתון 
