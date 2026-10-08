@@ -1,0 +1,22 @@
+[
+  {"signature_id": "S001", "kind": "regex", "tech_name": "jQuery", "category": "JavaScript Library",
+   "match_pattern": "jquery", "version_pattern": "jquery[-. v]+([0-9]+\\.[0-9]+\\.[0-9]+)"},
+  {"signature_id": "S002", "kind": "regex", "tech_name": "Bootstrap", "category": "CSS Framework",
+   "match_pattern": "bootstrap", "version_pattern": "bootstrap[-. v]+([0-9]+\\.[0-9]+\\.[0-9]+)"},
+  {"signature_id": "S003", "kind": "regex", "tech_name": "Vue", "category": "JavaScript Framework",
+   "match_pattern": "vue(\\.min)?\\.js|vue@", "version_pattern": "vue@([0-9]+\\.[0-9]+\\.[0-9]+)"},
+  {"signature_id": "S004", "kind": "regex", "tech_name": "nginx", "category": "Web Server",
+   "match_pattern": "server:\\s*nginx", "version_pattern": "nginx/([0-9]+\\.[0-9]+\\.[0-9]+)"},
+  {"signature_id": "S005", "kind": "regex", "tech_name": "PHP", "category": "Programming Language",
+   "match_pattern": "x-powered-by:\\s*php", "version_pattern": "php/([0-9]+\\.[0-9]+\\.[0-9]+)"},
+  {"signature_id": "S006", "kind": "regex", "tech_name": "WordPress", "category": "CMS",
+   "match_pattern": "wordpress", "version_pattern": "wordpress ([0-9]+\\.[0-9]+)"},
+  {"signature_id": "S007", "kind": "regex", "tech_name": "Express", "category": "Web Framework",
+   "match_pattern": "x-powered-by:\\s*express"},
+  {"signature_id": "S008", "kind": "package", "tech_name": "Express", "category": "Web Framework",
+   "package_name": "express"},
+  {"signature_id": "S009", "kind": "package", "tech_name": "React", "category": "JavaScript Framework",
+   "package_name": "react"},
+  {"signature_id": "S010", "kind": "package", "tech_name": "Lodash", "category": "JavaScript Library",
+   "package_name": "lodash"}
+]

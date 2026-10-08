@@ -147,15 +147,17 @@ class Detection:
 
 
 class Insight:
-    def __init__(self, insight_id, tech_name, affected_version, severity, description, recommendation, cve_id=None):
+    def __init__(self, insight_id, tech_name, affected_versions, severity, description, recommendation, cve_id=None):
         check_not_empty(insight_id, "insight_id")
         check_not_empty(tech_name, "tech_name")
         if not isinstance(severity, int) or severity < 1 or severity > 4:
             raise ValueError(f"severity must be a number between 1 and 4, got {severity!r}")
+        if not isinstance(affected_versions, list) or len(affected_versions) == 0:
+            raise ValueError(f"Insight {insight_id} needs a non-empty list of affected_versions")
 
         self.insight_id = insight_id
         self.tech_name = tech_name
-        self.affected_version = affected_version
+        self.affected_versions = affected_versions
         self.severity = severity
         self.description = description
         self.recommendation = recommendation
@@ -166,7 +168,7 @@ class Insight:
         return cls(
             data["insight_id"],
             data["tech_name"],
-            data["affected_version"],
+            data["affected_versions"],
             data["severity"],
             data["description"],
             data["recommendation"],
@@ -174,7 +176,8 @@ class Insight:
         )
 
     def __str__(self):
-        return f"{self.insight_id}: {self.tech_name} {self.affected_version} (severity {self.severity})"
+        versions = ", ".join(self.affected_versions)
+        return f"{self.insight_id}: {self.tech_name} {versions} (severity {self.severity})"
 
     def __repr__(self):
         return f"Insight('{self.insight_id}', '{self.tech_name}', {self.severity})"

@@ -1,5 +1,6 @@
 from webtech_inspector.models import ScanTarget, ContentEndpoint, MetaDataEndpoint
 from webtech_inspector.models import RegexSignature, PackageSignature
+from webtech_inspector.repository import load_targets, load_signatures, load_insights
 
 
 def demo_models():
@@ -64,10 +65,28 @@ def demo_signatures():
         print("Error:", error)
 
 
+def demo_loading():
+    print("\n=== Loading local data ===")
+    target_lookup = load_targets()
+    signatures = load_signatures()
+    insights = load_insights()
+
+    endpoint_count = 0
+    for target in target_lookup.values():
+        endpoint_count += len(target)
+        print(target)
+
+    print(f"Loaded {len(target_lookup)} targets, {endpoint_count} endpoints, "
+          f"{len(signatures)} signatures, {len(insights)} insights")
+    print("Lookup T003:", target_lookup.get("T003"))
+    print("Lookup T999:", target_lookup.get("T999"))
+
+
 def main():
     print("WebTech Inspector - Stage 1 (local synthetic data only)")
     demo_models()
     demo_signatures()
+    demo_loading()
 
 
 if __name__ == "__main__":

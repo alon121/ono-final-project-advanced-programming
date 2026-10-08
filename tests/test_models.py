@@ -65,9 +65,13 @@ class TestDetectionAndInsight(unittest.TestCase):
 
     def test_bad_severity(self):
         with self.assertRaises(ValueError):
-            Insight("I1", "jQuery", "3.4.1", 5, "desc", "fix")
+            Insight("I1", "jQuery", ["3.4.1"], 5, "desc", "fix")
         with self.assertRaises(ValueError):
-            Insight("I1", "jQuery", "3.4.1", 0, "desc", "fix")
+            Insight("I1", "jQuery", ["3.4.1"], 0, "desc", "fix")
+
+    def test_empty_versions(self):
+        with self.assertRaises(ValueError):
+            Insight("I1", "jQuery", [], 2, "desc", "fix")
 
 
 if __name__ == "__main__":
