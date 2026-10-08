@@ -1,9 +1,12 @@
+from itertools import islice
+
 from webtech_inspector.models import ScanTarget, ContentEndpoint, MetaDataEndpoint
 from webtech_inspector.models import RegexSignature, PackageSignature
 from webtech_inspector.repository import load_targets, load_signatures, load_insights
 from webtech_inspector.detection import detect_technologies, match_insights, find_manual_checks
 from webtech_inspector import processing
-from webtech_inspector.iterators import EndpointCollection
+from webtech_inspector.iterators import EndpointCollection, iter_urgent_findings, iter_with_log
+from webtech_inspector.iterators import tech_version_pipeline
 
 
 def demo_models():
@@ -221,6 +224,31 @@ def demo_iterators(target_lookup):
         print("Empty collection -> StopIteration")
 
 
+def demo_generators(detections, findings):
+    print("\n=== Generator (yield) ===")
+    urgent = iter_urgent_findings(findings)
+    print("Generator created:", urgent)
+    print("next():", next(urgent))
+    print("The rest with for:")
+    for finding in urgent:
+        print("  ", finding)
+
+    try:
+        next(urgent)
+    except StopIteration:
+        print("Generator is used up -> StopIteration")
+    print("Looping again on the same generator gives:", list(urgent))
+    print("A new generator starts again, first item:", next(iter_urgent_findings(findings)))
+
+    print("\n=== Lazy pipeline ===")
+    pipeline = tech_version_pipeline(iter_with_log(detections), "JavaScript Library")
+    print("Pipeline created, nothing was read yet")
+    print("Taking only 2 results:")
+    for tech_name, version in islice(pipeline, 2):
+        print(f"   -> {tech_name} {version}")
+    print(f"Stopped. Only part of the {len(detections)} detections were read.")
+
+
 def main():
     print("WebTech Inspector - Stage 1 (local synthetic data only)")
     demo_models()
@@ -231,6 +259,7 @@ def main():
     demo_collections(target_lookup, detections, findings)
     demo_queues_and_sorting(target_lookup, findings)
     demo_iterators(target_lookup)
+    demo_generators(detections, findings)
 
 
 if __name__ == "__main__":
