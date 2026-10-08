@@ -3,7 +3,7 @@ from itertools import islice
 from webtech_inspector.models import ScanTarget, ContentEndpoint, MetaDataEndpoint
 from webtech_inspector.models import RegexSignature, PackageSignature
 from webtech_inspector.repository import load_targets, load_signatures, load_insights
-from webtech_inspector.detection import detect_technologies, match_insights, find_manual_checks
+from webtech_inspector.detection import match_insights, find_manual_checks
 from webtech_inspector import processing
 from webtech_inspector.iterators import EndpointCollection, iter_urgent_findings, iter_with_log
 from webtech_inspector.iterators import tech_version_pipeline
@@ -95,7 +95,7 @@ def demo_detection(target_lookup, signatures):
     all_detections = []
     for target in target_lookup.values():
         with AnalysisSession(target):
-            detections, warnings = detect_technologies(target, signatures)
+            detections, warnings = target.detect_technologies(signatures)
         print(f"{target.target_id}: {len(detections)} detections")
         for detection in detections:
             print("  ", detection)
@@ -106,7 +106,7 @@ def demo_detection(target_lookup, signatures):
     broken_target = ScanTarget("T900", "https://broken.example.test")
     broken_target.add_endpoint(ContentEndpoint("E900", '{"dependencies": ', "package.json",
                                                "/package.json", 200, "JSON"))
-    detections, warnings = detect_technologies(broken_target, signatures)
+    detections, warnings = broken_target.detect_technologies(signatures)
     print("Broken package.json ->", len(detections), "detections,", len(warnings), "warnings")
     print("   Warning:", warnings[0])
     return all_detections
@@ -258,7 +258,7 @@ def demo_context_manager(target_lookup, signatures):
 
     with AnalysisSession(target) as session_target:
         print("Status inside with:", session_target.status)
-        detections, warnings = detect_technologies(session_target, signatures)
+        detections, warnings = session_target.detect_technologies(signatures)
         print("Detections found inside the session:", len(detections))
     print("Status after:", target.status)
 
