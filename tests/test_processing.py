@@ -94,6 +94,10 @@ class TestQueues(unittest.TestCase):
         # same severity keeps the order they were added (B before D, A before E)
         self.assertEqual(order, ["B", "D", "C", "A", "E"])
 
+    def test_empty_queue(self):
+        queue = processing.build_endpoint_queue(ScanTarget("T1", "u"))
+        self.assertIsNone(processing.next_endpoint(queue))
+
     def test_empty_heap(self):
         heap = processing.build_priority_queue([])
         self.assertIsNone(processing.next_finding(heap))
@@ -109,6 +113,25 @@ class TestSorting(unittest.TestCase):
         findings = [make_finding("Vue", 2), make_finding("Angular", 2), make_finding("React", 1)]
         names = [finding.detection.tech_name for finding in processing.sort_by_severity_and_name(findings)]
         self.assertEqual(names, ["React", "Angular", "Vue"])
+
+    def test_sort_ignores_case(self):
+        findings = [make_finding("PHP", 2), make_finding("jQuery", 2), make_finding("Express", 2)]
+        names = [finding.detection.tech_name for finding in processing.sort_by_severity_and_name(findings)]
+        self.assertEqual(names, ["Express", "jQuery", "PHP"])
+
+    def test_sort_is_stable_on_ties(self):
+        first = make_finding("A", 2)
+        second = make_finding("B", 2)
+        self.assertEqual(processing.sort_by_severity([first, second]), [first, second])
+
+    def test_comprehensions_with_empty_input(self):
+        self.assertEqual(processing.tech_names_of_target([], "T1"), set())
+        self.assertEqual(processing.finding_rows([]), [])
+        self.assertEqual(processing.group_by_category([]), {})
+
+    def test_set_ignores_duplicates(self):
+        detections = [make_detection("T1", "jQuery", "1"), make_detection("T1", "jQuery", "2")]
+        self.assertEqual(processing.tech_names_of_target(detections, "T1"), {"jQuery"})
 
     def test_sort_targets_by_size(self):
         small = ScanTarget("T1", "u1")

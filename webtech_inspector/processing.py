@@ -95,4 +95,5 @@ def sort_targets_by_size(targets):
 
 
 def sort_by_severity_and_name(findings):
-    return sorted(findings, key=lambda finding: (finding.severity, finding.detection.tech_name))
+    # lower() so "jQuery" and "PHP" are sorted like a person would expect
+    return sorted(findings, key=lambda finding: (finding.severity, finding.detection.tech_name.lower()))

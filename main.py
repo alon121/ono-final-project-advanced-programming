@@ -138,9 +138,8 @@ def demo_collections(target_lookup, detections, findings):
     print("Angular count (missing key):", tech_counts.get("Angular", 0))
 
     rows = processing.finding_rows(findings)
-    print("First finding row (tuple):", rows[0])
     first, remaining = processing.split_first(rows)
-    print(f"First: {first}, remaining rows: {len(remaining)}")
+    print(f"First finding row (tuple): {first}, remaining rows: {len(remaining)}")
     print("split_first on empty list:", processing.split_first([]))
 
     known = processing.known_version_detections(detections)
