@@ -3,7 +3,6 @@ from itertools import islice
 from webtech_inspector.models import ScanTarget, ContentEndpoint, MetaDataEndpoint
 from webtech_inspector.models import RegexSignature, PackageSignature
 from webtech_inspector.repository import load_targets, load_signatures, load_insights
-from webtech_inspector.detection import detect_technologies, match_insights, find_manual_checks
 from webtech_inspector import processing
 from webtech_inspector.iterators import EndpointCollection, iter_urgent_findings, iter_with_log
 from webtech_inspector.iterators import tech_version_pipeline
@@ -95,7 +94,7 @@ def demo_detection(target_lookup, signatures):
     all_detections = []
     for target in target_lookup.values():
         with AnalysisSession(target):
-            detections, warnings = detect_technologies(target, signatures)
+            detections, warnings = processing.detect_technologies(target, signatures)
         print(f"{target.target_id}: {len(detections)} detections")
         for detection in detections:
             print("  ", detection)
@@ -106,7 +105,7 @@ def demo_detection(target_lookup, signatures):
     broken_target = ScanTarget("T900", "https://broken.example.test")
     broken_target.add_endpoint(ContentEndpoint("E900", '{"dependencies": ', "package.json",
                                                "/package.json", 200, "JSON"))
-    detections, warnings = detect_technologies(broken_target, signatures)
+    detections, warnings = processing.detect_technologies(broken_target, signatures)
     print("Broken package.json ->", len(detections), "detections,", len(warnings), "warnings")
     print("   Warning:", warnings[0])
     return all_detections
@@ -114,13 +113,13 @@ def demo_detection(target_lookup, signatures):
 
 def demo_risks(detections, insights):
     print("\n=== Possible risks (local synthetic rules, not verified vulnerabilities) ===")
-    findings = match_insights(detections, insights)
+    findings = processing.match_insights(detections, insights)
     for finding in findings:
         critical_text = " CRITICAL" if finding.insight.is_critical else ""
         print(f"{finding}{critical_text}")
 
     print("\nNeeds manual check (version unknown):")
-    for detection in find_manual_checks(detections, insights):
+    for detection in processing.find_manual_checks(detections, insights):
         print("  ", detection.tech_name, "in", detection.target_id, detection.endpoint_id)
 
     matched_ids = set()
@@ -258,7 +257,7 @@ def demo_context_manager(target_lookup, signatures):
 
     with AnalysisSession(target) as session_target:
         print("Status inside with:", session_target.status)
-        detections, warnings = detect_technologies(session_target, signatures)
+        detections, warnings = processing.detect_technologies(session_target, signatures)
         print("Detections found inside the session:", len(detections))
     print("Status after:", target.status)
 
@@ -305,7 +304,7 @@ def print_report(target_lookup, signatures, detections, findings, insights):
               f"{detection.target_id}/{detection.endpoint_id} - rule {finding.insight.insight_id}")
         print(f"      Recommendation: {finding.insight.recommendation}")
 
-    manual_checks = find_manual_checks(detections, insights)
+    manual_checks = processing.find_manual_checks(detections, insights)
     print(f"\nNeeds manual check (version unknown): {len(manual_checks)}")
 
     print("\nNote: this report uses synthetic data and local matching rules only.")
