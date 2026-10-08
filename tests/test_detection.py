@@ -2,7 +2,7 @@ import unittest
 
 from webtech_inspector.models import ScanTarget, ContentEndpoint, MetaDataEndpoint
 from webtech_inspector.repository import load_targets, load_signatures
-from webtech_inspector.detection import detect_technologies
+from webtech_inspector.processing import detect_technologies
 
 
 def make_target(*endpoints):
