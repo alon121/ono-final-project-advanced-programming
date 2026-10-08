@@ -7,6 +7,7 @@ from webtech_inspector.detection import detect_technologies, match_insights, fin
 from webtech_inspector import processing
 from webtech_inspector.iterators import EndpointCollection, iter_urgent_findings, iter_with_log
 from webtech_inspector.iterators import tech_version_pipeline
+from webtech_inspector.context_managers import AnalysisSession
 
 
 def demo_models():
@@ -249,6 +250,26 @@ def demo_generators(detections, findings):
     print(f"Stopped. Only part of the {len(detections)} detections were read.")
 
 
+def demo_context_manager(target_lookup, signatures):
+    print("\n=== Context manager ===")
+    target = target_lookup["T003"]
+    print("Status before:", target.status)
+
+    with AnalysisSession(target) as session_target:
+        print("Status inside with:", session_target.status)
+        detections, warnings = detect_technologies(session_target, signatures)
+        print("Detections found inside the session:", len(detections))
+    print("Status after:", target.status)
+
+    try:
+        with AnalysisSession(target):
+            print("Status inside with:", target.status)
+            raise ValueError("demo error inside the analysis")
+    except ValueError as error:
+        print("Caught outside the with block:", error)
+    print("Status after the error:", target.status)
+
+
 def main():
     print("WebTech Inspector - Stage 1 (local synthetic data only)")
     demo_models()
@@ -260,6 +281,7 @@ def main():
     demo_queues_and_sorting(target_lookup, findings)
     demo_iterators(target_lookup)
     demo_generators(detections, findings)
+    demo_context_manager(target_lookup, signatures)
 
 
 if __name__ == "__main__":

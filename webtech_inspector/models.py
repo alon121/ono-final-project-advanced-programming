@@ -3,6 +3,7 @@ import re
 from abc import ABC, abstractmethod
 
 VALID_CONTENT_TYPES = ["HTML", "JSON", "JS", "CSS"]
+VALID_STATUSES = ["idle", "processing", "done"]
 
 
 def check_not_empty(value, field_name):
@@ -94,6 +95,17 @@ class ScanTarget:
         self.target_id = target_id
         self.uri = uri
         self.endpoints = []
+        self.status = "idle"
+
+    @property
+    def status(self):
+        return self._status
+
+    @status.setter
+    def status(self, new_status):
+        if new_status not in VALID_STATUSES:
+            raise ValueError(f"status must be one of {VALID_STATUSES}, got {new_status!r}")
+        self._status = new_status
 
     def find_endpoint(self, endpoint_id):
         for endpoint in self.endpoints:
