@@ -90,6 +90,7 @@ webtech_inspector/processing.py  זיהוי טכנולוגיות, התאמת כ�
 webtech_inspector/iterators.py   Iterator, Generator, Lazy Pipeline.
 webtech_inspector/context_managers.py  מימוש של AnalysisSession כ Context Manager.
 AI_USAGE.md                      פירוט השימוש בAI כולל ההנחיות המפורשות לגבי יצירת המידע.
+full_specifications.md           תיאור המודלים השונים שהשתמשנו בו כדי להכווין את פיתוח המחלקות
 data/                            נתוני דוגמה, חתימות וכללים
 tests/                           בדיקות unittest
 .gitignore, pyproject.toml : קבצים להתעלמות והגדרות הפרויקט.
