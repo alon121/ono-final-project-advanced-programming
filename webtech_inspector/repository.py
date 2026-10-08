@@ -16,6 +16,8 @@ METADATA_FIELDS = ["metadata_type"]
 
 
 def check_fields(record, fields, line_number):
+    if not isinstance(record, dict):
+        raise ValueError(f"Line {line_number}: expected a JSON object")
     for field in fields:
         if field not in record:
             raise ValueError(f"Line {line_number}: missing field '{field}'")
@@ -89,7 +91,9 @@ def load_signatures(file_path=PATTERNS_FILE):
     for number, item in enumerate(load_json_list(file_path), start=1):
         try:
             signature = signature_from_dict(item)
-        except (KeyError, ValueError) as error:
+        except KeyError as error:
+            raise ValueError(f"{file_path} item {number}: missing field {error}")
+        except ValueError as error:
             raise ValueError(f"{file_path} item {number}: {error}")
 
         if signature.signature_id in seen_ids:
@@ -105,7 +109,9 @@ def load_insights(file_path=INSIGHTS_FILE):
     for number, item in enumerate(load_json_list(file_path), start=1):
         try:
             insight = Insight.from_dict(item)
-        except (KeyError, ValueError) as error:
+        except KeyError as error:
+            raise ValueError(f"{file_path} item {number}: missing field {error}")
+        except ValueError as error:
             raise ValueError(f"{file_path} item {number}: {error}")
 
         if insight.insight_id in seen_ids:
