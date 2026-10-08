@@ -1,7 +1,7 @@
 import unittest
 
 from webtech_inspector.models import Detection, Insight
-from webtech_inspector.detection import match_insights, find_manual_checks
+from webtech_inspector.processing import match_insights, find_manual_checks
 
 JQUERY_RULE = Insight("I1", "jQuery", ["3.4.0", "3.4.1"], 2, "old jQuery", "upgrade", " cve-0000-0001 ")
 LODASH_RULE = Insight("I2", "Lodash", ["4.17.15"], 1, "old Lodash", "upgrade")
