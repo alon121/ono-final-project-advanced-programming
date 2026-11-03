@@ -12,9 +12,11 @@ class RiskScoringService:
 
 
 def filter_cves_by_min_severity(vulns, min_severity):
+    # 1 is the most severe, so "severe enough" means a number <= min_severity.
+    # A vulnerability with unknown severity (None) is skipped.
     result = []
     for vuln in vulns:
-        if vuln["severity"] is not None:
-            if vuln["severity"] <= min_severity:
-                result.append(vuln)
+        severity = vuln["severity"]
+        if severity is not None and severity <= min_severity:
+            result.append(vuln)
     return result
