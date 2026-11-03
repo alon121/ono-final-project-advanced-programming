@@ -69,3 +69,23 @@ class VulnerabilityApiClient:
         # requests is blocking, so we run it in a thread and do not stop the event loop
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, self.fetch_cves_sync, tech_name, version)
+
+
+class LocalVulnerabilityClient:
+    # offline version: answers from our local insights.json, with the same methods as the real client
+    def __init__(self, insights):
+        self.insights = insights
+
+    def fetch_cves_sync(self, tech_name, version):
+        vulnerabilities = []
+        for insight in self.insights:
+            if insight.tech_name == tech_name and version in insight.affected_versions:
+                vulnerabilities.append({
+                    "cve_id": insight.cve_id or insight.insight_id,
+                    "summary": insight.description,
+                    "severity": insight.severity,
+                })
+        return vulnerabilities
+
+    async def fetch_cves_async(self, tech_name, version):
+        return self.fetch_cves_sync(tech_name, version)
