@@ -158,8 +158,27 @@ cd ono-final-project-advanced-programming
 ```
 
 ## הרצה
+### ריצה עם חיבור חיצוני (NVD)
+```
+python main.py --live
+```
+### ריצה באופליין
 ```
 python main.py
+```
+
+## קובץ ENV
+```
+נתיב לAPI של NVD
+API_BASE_URL=http://localhost:8080/v1/query
+טיימאאוט לגישה לNVD
+API_TIMEOUT_SECONDS=5
+מפתח שימוש בAPI, ניתן להרשם בחינם באתר שלהם
+API_TOKEN=
+מקסימום נסיונות בקריאה לAPI
+MAX_RETRIES=3
+השהייה בין נסיונות
+RETRY_DELAY_SECONDS=0.5
 ```
 
 ## הרצת בדיקות
