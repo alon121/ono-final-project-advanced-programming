@@ -2,8 +2,8 @@ import pytest
 
 from webtech_inspector.factories import EndpointFactory
 from webtech_inspector.models import ContentEndpoint, MetaDataEndpoint
-from webtech_inspector.services import RiskScoringService
-from webtech_inspector.strategies import RiskScoringStrategy, SeverityFirstStrategy, ExposureWeightedStrategy
+from webtech_inspector.services import (RiskScoringService, RiskScoringStrategy, SeverityFirstStrategy,
+                                        ExposureWeightedStrategy)
 
 CONTENT_RECORD = {"endpoint_type": "content", "endpoint_id": "E1", "raw_content": "<html></html>",
                   "source_name": "homepage", "path": "/", "status_code": 200, "content_type": "HTML"}

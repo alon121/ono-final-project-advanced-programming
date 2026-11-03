@@ -34,6 +34,7 @@ class SafeThreadedSessionRunner:
         self.registry.acquire_target(target.target_id)
         try:
             with AnalysisSession(target):
+                # stands for the analysis work, so a second thread has time to try the same target
                 time.sleep(0.1)
                 return f"Target {target.target_id} processed successfully"
         finally:

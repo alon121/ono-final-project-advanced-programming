@@ -8,8 +8,8 @@ import requests
 
 from webtech_inspector.api_client import VulnerabilityApiClient, LocalVulnerabilityClient
 from webtech_inspector.async_processing import discover_endpoints_concurrent, discover_endpoints_sequential
-from webtech_inspector.services import RiskScoringService, filter_cves_by_min_severity
-from webtech_inspector.strategies import SeverityFirstStrategy, ExposureWeightedStrategy
+from webtech_inspector.services import (RiskScoringService, SeverityFirstStrategy, ExposureWeightedStrategy,
+                                        filter_cves_by_min_severity)
 from webtech_inspector.threaded_processing import (ActiveSessionRegistry, SafeThreadedSessionRunner,
                                                    TargetAlreadyProcessingError)
 from webtech_inspector.models import ScanTarget, ContentEndpoint, MetaDataEndpoint
@@ -390,11 +390,11 @@ def demo_threads():
 
 def main():
     parser = argparse.ArgumentParser(description="WebTech Inspector demo")
-    parser.add_argument("--live", action="store_true", help="check vulnerabilities with the real OSV API")
+    parser.add_argument("--live", action="store_true", help="check vulnerabilities with the real NVD API")
     args = parser.parse_args()
 
     if args.live:
-        print("[LIVE API MODE] vulnerabilities come from OSV (api.osv.dev)")
+        print("[LIVE API MODE] vulnerabilities come from NVD (services.nvd.nist.gov)")
     else:
         print("[OFFLINE MODE] vulnerabilities come from local synthetic rules")
 

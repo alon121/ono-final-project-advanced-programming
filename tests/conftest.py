@@ -5,16 +5,18 @@ from webtech_inspector.models import ContentEndpoint, MetaDataEndpoint
 
 @pytest.fixture
 def mock_api_success_response():
-    # a short answer in the same format OSV returns
+    # a short answer in the same format NVD returns
     return {
-        "vulns": [
+        "totalResults": 1,
+        "vulnerabilities": [
             {
-                "id": "GHSA-0000-0000-0001",
-                "aliases": ["CVE-0000-0001"],
-                "summary": "Synthetic example vulnerability",
-                "database_specific": {"severity": "HIGH"},
+                "cve": {
+                    "id": "CVE-0000-0001",
+                    "descriptions": [{"lang": "en", "value": "Synthetic example vulnerability"}],
+                    "metrics": {"cvssMetricV31": [{"cvssData": {"baseSeverity": "HIGH"}}]},
+                }
             }
-        ]
+        ],
     }
 
 

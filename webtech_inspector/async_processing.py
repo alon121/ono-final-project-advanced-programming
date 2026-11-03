@@ -3,6 +3,9 @@ import time
 
 from webtech_inspector.factories import EndpointFactory
 
+# how long one simulated web request takes (seconds)
+FETCH_DELAY = 0.05
+
 # the 3 paths we check on every target
 PATHS_CONFIG = [("/", "content"), ("/robots.txt", "metadata"), ("/package.json", "content")]
 
@@ -32,7 +35,7 @@ def find_technologies(endpoint, signatures):
     return found
 
 
-async def fetch_path_mockable(base_url, path, endpoint_type, delay=0.05):
+async def fetch_path_mockable(base_url, path, endpoint_type, delay=FETCH_DELAY):
     # the sleep stands for the time a real web request would take
     await asyncio.sleep(delay)
     return build_record(base_url, path, endpoint_type)
@@ -62,7 +65,7 @@ def discover_endpoints_sequential(target, api_client, signatures):
     # the same work, one path after the other - used to compare with the concurrent version
     endpoints = []
     for path, endpoint_type in PATHS_CONFIG:
-        time.sleep(0.05)
+        time.sleep(FETCH_DELAY)
         endpoint = EndpointFactory.create_endpoint(build_record(target.uri, path, endpoint_type))
         for tech_name, version in find_technologies(endpoint, signatures):
             endpoint.vulnerabilities.extend(api_client.fetch_cves_sync(tech_name, version))
