@@ -7,7 +7,8 @@ from itertools import islice
 import requests
 
 from webtech_inspector.api_client import VulnerabilityApiClient, LocalVulnerabilityClient
-from webtech_inspector.async_processing import discover_endpoints_concurrent, discover_endpoints_sequential
+from webtech_inspector.async_processing import (discover_endpoints_concurrent, discover_endpoints_sequential,
+                                                scan_real_site)
 from webtech_inspector.services import (RiskScoringService, SeverityFirstStrategy, ExposureWeightedStrategy,
                                         filter_cves_by_min_severity)
 from webtech_inspector.threaded_processing import (ActiveSessionRegistry, SafeThreadedSessionRunner,
@@ -388,15 +389,69 @@ def demo_threads():
     print(f"   Status after both threads: {target.status}")
 
 
+def scan_website(url, live):
+    print(f"\n=== Scanning {url} ===")
+    signatures = load_signatures()
+    insights = load_insights()
+    local_client = LocalVulnerabilityClient(insights)
+    if live:
+        client = VulnerabilityApiClient()
+    else:
+        client = local_client
+
+    target = ScanTarget("LIVE", url)
+    try:
+        endpoints = asyncio.run(scan_real_site(target, client, signatures))
+    except requests.exceptions.RequestException as error:
+        # NVD did not answer (or blocked us for too many requests), so we use the local rules
+        print(f"Vulnerability API failed ({error}). Using local rules instead.")
+        target = ScanTarget("LIVE", url)
+        endpoints = asyncio.run(scan_real_site(target, local_client, signatures))
+
+    if len(endpoints) == 0:
+        print("Could not read the site.")
+        return
+
+    print("Pages read:")
+    for endpoint in endpoints:
+        print(f"   {endpoint}")
+
+    detections, warnings = processing.detect_technologies(target, signatures)
+    print("Technologies found:")
+    if len(detections) == 0:
+        print("   none of our signatures matched")
+    for detection in detections:
+        print(f"   {detection}")
+
+    print("Vulnerabilities:")
+    total = 0
+    for endpoint in endpoints:
+        for vuln in endpoint.vulnerabilities:
+            print(f"   {vuln['cve_id']} severity={vuln['severity']} - {vuln['summary'][:80]}")
+            total += 1
+    if total == 0:
+        print("   none found for the detected versions")
+    score = RiskScoringService(SeverityFirstStrategy()).evaluate_target_risk(endpoints)
+    print(f"Risk score: {score:.1f}")
+
+
 def main():
     parser = argparse.ArgumentParser(description="WebTech Inspector demo")
     parser.add_argument("--live", action="store_true", help="check vulnerabilities with the real NVD API")
+    parser.add_argument("--url", help="scan a real website, for example https://example.com")
     args = parser.parse_args()
 
     if args.live:
         print("[LIVE API MODE] vulnerabilities come from NVD (services.nvd.nist.gov)")
     else:
         print("[OFFLINE MODE] vulnerabilities come from local synthetic rules")
+
+    if args.url:
+        if not args.url.startswith(("http://", "https://")):
+            print("The url must start with http:// or https://")
+            return
+        scan_website(args.url, args.live)
+        return
 
     print("WebTech Inspector - Stage 1 (local synthetic data only)")
     demo_models()
