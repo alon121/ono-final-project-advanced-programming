@@ -9,3 +9,12 @@ class RiskScoringService:
             for vulnerability in endpoint.vulnerabilities:
                 total += self.strategy.calculate_score(vulnerability["severity"], endpoint.endpoint_type)
         return total
+
+
+def filter_cves_by_min_severity(vulns, min_severity):
+    result = []
+    for vuln in vulns:
+        if vuln["severity"] is not None:
+            if vuln["severity"] <= min_severity:
+                result.append(vuln)
+    return result
