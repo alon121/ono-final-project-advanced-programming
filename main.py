@@ -10,7 +10,7 @@ from webtech_inspector.api_client import VulnerabilityApiClient, LocalVulnerabil
 from webtech_inspector.async_processing import (discover_endpoints_concurrent, discover_endpoints_sequential,
                                                 scan_real_site)
 from webtech_inspector.services import (RiskScoringService, SeverityFirstStrategy, ExposureWeightedStrategy,
-                                        filter_cves_by_min_severity)
+                                        filter_cves_by_min_severity, sort_cves_by_severity)
 from webtech_inspector.threaded_processing import (ActiveSessionRegistry, SafeThreadedSessionRunner,
                                                    TargetAlreadyProcessingError)
 from webtech_inspector.models import ScanTarget, ContentEndpoint, MetaDataEndpoint
@@ -423,13 +423,13 @@ def scan_website(url, live):
     for detection in detections:
         print(f"   {detection}")
 
-    print("Vulnerabilities:")
-    total = 0
+    print("Vulnerabilities (most severe first):")
+    all_vulns = []
     for endpoint in endpoints:
-        for vuln in endpoint.vulnerabilities:
-            print(f"   {vuln['cve_id']} severity={vuln['severity']} - {vuln['summary'][:80]}")
-            total += 1
-    if total == 0:
+        all_vulns.extend(endpoint.vulnerabilities)
+    for vuln in sort_cves_by_severity(all_vulns):
+        print(f"   {vuln['cve_id']} severity={vuln['severity']} - {vuln['summary'][:80]}")
+    if len(all_vulns) == 0:
         print("   none found for the detected versions")
     score = RiskScoringService(SeverityFirstStrategy()).evaluate_target_risk(endpoints)
     print(f"Risk score: {score:.1f}")

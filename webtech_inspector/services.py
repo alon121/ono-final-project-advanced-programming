@@ -48,12 +48,13 @@ def filter_cves_by_min_severity(vulns, min_severity):
     return result
 
 
+def cve_sort_key(vuln):
+    # unknown severity (None) goes last, after 4 (low)
+    if vuln["severity"] is None:
+        return 5
+    return vuln["severity"]
+
+
 def sort_cves_by_severity(vulns):
-    known = []
-    unknown = []
-    for vuln in vulns:
-        if vuln["severity"] is None:
-            unknown.append(vuln)
-        else:
-            known.append(vuln)
-    return sorted(known, key=lambda vuln: vuln["severity"]) + unknown
+    # most severe first; sorted() keeps the original order when the severity is equal
+    return sorted(vulns, key=cve_sort_key)
