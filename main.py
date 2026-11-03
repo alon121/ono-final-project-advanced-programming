@@ -1,5 +1,17 @@
+import argparse
+import asyncio
+import threading
+import time
 from itertools import islice
 
+import requests
+
+from webtech_inspector.api_client import VulnerabilityApiClient, LocalVulnerabilityClient
+from webtech_inspector.async_processing import discover_endpoints_concurrent, discover_endpoints_sequential
+from webtech_inspector.services import RiskScoringService, filter_cves_by_min_severity
+from webtech_inspector.strategies import SeverityFirstStrategy, ExposureWeightedStrategy
+from webtech_inspector.threaded_processing import (ActiveSessionRegistry, SafeThreadedSessionRunner,
+                                                   TargetAlreadyProcessingError)
 from webtech_inspector.models import ScanTarget, ContentEndpoint, MetaDataEndpoint
 from webtech_inspector.models import RegexSignature, PackageSignature
 from webtech_inspector.repository import load_targets, load_signatures, load_insights
@@ -311,7 +323,81 @@ def print_report(target_lookup, signatures, detections, findings, insights):
     print("It is not a penetration test and no vulnerability was verified on a network.")
 
 
+def demo_discovery(live, signatures, insights):
+    print("\n=== Phase 2: discover 3 paths and check vulnerabilities ===")
+    local_client = LocalVulnerabilityClient(insights)
+    if live:
+        client = VulnerabilityApiClient()
+    else:
+        client = local_client
+
+    start = time.perf_counter()
+    try:
+        endpoints = asyncio.run(discover_endpoints_concurrent(
+            ScanTarget("W001", "https://web.example.test"), client, signatures))
+    except requests.exceptions.RequestException as error:
+        # the API is not reachable, so we keep working with the local rules
+        print(f"Live API failed ({error}). Falling back to local data.")
+        client = local_client
+        endpoints = asyncio.run(discover_endpoints_concurrent(
+            ScanTarget("W001", "https://web.example.test"), client, signatures))
+    concurrent_time = time.perf_counter() - start
+
+    start = time.perf_counter()
+    discover_endpoints_sequential(ScanTarget("W002", "https://web.example.test"), client, signatures)
+    sequential_time = time.perf_counter() - start
+    print(f"Concurrent: {concurrent_time:.3f}s | Sequential: {sequential_time:.3f}s")
+
+    for endpoint in endpoints:
+        print(f"   {endpoint.endpoint_id} ({endpoint.endpoint_type}): {len(endpoint.vulnerabilities)} vulnerabilities")
+        for vuln in endpoint.vulnerabilities:
+            print(f"      {vuln['cve_id']} severity={vuln['severity']}")
+    return endpoints
+
+
+def demo_strategies(endpoints):
+    print("\n=== Phase 2: risk score with two strategies ===")
+    for strategy in [SeverityFirstStrategy(), ExposureWeightedStrategy()]:
+        service = RiskScoringService(strategy)
+        print(f"   {type(strategy).__name__}: {service.evaluate_target_risk(endpoints):.1f}")
+
+    all_vulns = []
+    for endpoint in endpoints:
+        all_vulns.extend(endpoint.vulnerabilities)
+    urgent = filter_cves_by_min_severity(all_vulns, 2)
+    print(f"   Critical or high (severity <= 2): {len(urgent)} of {len(all_vulns)}")
+
+
+def demo_threads():
+    print("\n=== Phase 2: two threads on the same target ===")
+    runner = SafeThreadedSessionRunner(ActiveSessionRegistry())
+    target = ScanTarget("W003", "https://web.example.test")
+
+    def work(name):
+        try:
+            print(f"   {name}: {runner.run_session(target)}")
+        except TargetAlreadyProcessingError as error:
+            print(f"   {name}: blocked - {error}")
+
+    threads = [threading.Thread(target=work, args=("thread-1",)),
+               threading.Thread(target=work, args=("thread-2",))]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    print(f"   Status after both threads: {target.status}")
+
+
 def main():
+    parser = argparse.ArgumentParser(description="WebTech Inspector demo")
+    parser.add_argument("--live", action="store_true", help="check vulnerabilities with the real OSV API")
+    args = parser.parse_args()
+
+    if args.live:
+        print("[LIVE API MODE] vulnerabilities come from OSV (api.osv.dev)")
+    else:
+        print("[OFFLINE MODE] vulnerabilities come from local synthetic rules")
+
     print("WebTech Inspector - Stage 1 (local synthetic data only)")
     demo_models()
     demo_signatures()
@@ -324,6 +410,10 @@ def main():
     demo_generators(detections, findings)
     demo_context_manager(target_lookup, signatures)
     print_report(target_lookup, signatures, detections, findings, insights)
+
+    discovered = demo_discovery(args.live, signatures, insights)
+    demo_strategies(discovered)
+    demo_threads()
 
 
 if __name__ == "__main__":
