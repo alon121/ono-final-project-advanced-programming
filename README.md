@@ -167,3 +167,9 @@ python main.py
 python -m unittest discover -s tests -t .
 ```
 
+## תלויות חיצוניות (החל מגרסא 0.2.0)
+```
+requests >= 2.31.0
+pytest >= 7.4.0
+pytest-asyncio >= 0.21.0
+```
