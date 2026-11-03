@@ -46,3 +46,14 @@ def filter_cves_by_min_severity(vulns, min_severity):
         if severity is not None and severity <= min_severity:
             result.append(vuln)
     return result
+
+
+def sort_cves_by_severity(vulns):
+    known = []
+    unknown = []
+    for vuln in vulns:
+        if vuln["severity"] is None:
+            unknown.append(vuln)
+        else:
+            known.append(vuln)
+    return sorted(known, key=lambda vuln: vuln["severity"]) + unknown
