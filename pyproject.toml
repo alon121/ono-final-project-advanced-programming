@@ -1,6 +1,13 @@
 [project]
 name = "webtech-inspector"
-version = "0.1.0"
-description = "Local tech stack detection and risk report (course project, Stage 1)"
+version = "0.2.0"
+description = "Local tech stack detection and risk report (course project)"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+    "requests==2.31.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest==8.3.3",
+]

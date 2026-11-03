@@ -17,6 +17,8 @@ class Endpoint:
         self.endpoint_id = endpoint_id
         self.raw_content = raw_content
         self.source_name = source_name
+        # filled later by the vulnerability API (phase 2)
+        self.vulnerabilities = []
 
     def get_searchable_content(self):
         return self.raw_content
@@ -29,6 +31,8 @@ class Endpoint:
 
 
 class ContentEndpoint(Endpoint):
+    endpoint_type = "content"
+
     def __init__(self, endpoint_id, raw_content, source_name, path, status_code, content_type):
         super().__init__(endpoint_id, raw_content, source_name)
 
@@ -64,6 +68,8 @@ class ContentEndpoint(Endpoint):
 
 
 class MetaDataEndpoint(Endpoint):
+    endpoint_type = "metadata"
+
     def __init__(self, endpoint_id, raw_content, source_name, metadata_type):
         super().__init__(endpoint_id, raw_content, source_name)
         self.metadata_type = metadata_type
